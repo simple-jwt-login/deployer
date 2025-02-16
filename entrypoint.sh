@@ -5,16 +5,31 @@ VERSION=0.1.0
 
 # Init variables from args
 FOLDER=$1
-SLUG=$2
-SVN_USERNAME=$3
-SVN_PASSWORD=$4
-TAG=$5
-ASSETS_FOLDER=$6
-DRY_RUN=$7
+EXCLUDE=$2
+SLUG=$3
+SVN_USERNAME=$4
+SVN_PASSWORD=$5
+TAG=$6
+ASSETS_FOLDER=$7
+DRY_RUN=$8
+
+EXCLUDE_FILE="/exclude.txt"
+touch  $EXCLUDE_FILE
+# Add excluded files 
+if [ -z "$EXCLUDE" ]; then
+    echo ".gitignore" > $EXCLUDE_FILE
+else 
+    array=(`echo $string | sed 's/,/\n/g'`)
+    for i in "${!array[@]}"
+    do
+        echo ${array[i]} >> $EXCLUDE_FILE
+    done
+fi 
+
 
 
 # Validate number of arguments
-if [ $# -lt 6 ]; then
+if [ $# -lt 7 ]; then
     logLine "$ERROR Missing arguments"
     exit 1
 fi;
@@ -94,7 +109,7 @@ logLine "$GREEN svn update completed."
 
 ## Debugging
 logLine "$PURPLE List $SVN_DIR/trunk ..."
-ls $SVN_DIR/trunk
+ls -la $SVN_DIR/trunk
 
 logLine "$PURPLE List $SVN_DIR/tags ..."
 ls -d $SVN_DIR/tags
@@ -106,7 +121,7 @@ if [[ -d "tags/$VERSION" ]]; then
 fi
 
 logLine "$BLUE Copying files from build directory to  trunk..."
-rsync -rc "/app/$FOLDER" trunk/ --delete --delete-excluded
+rsync -rc --exclude-from=$EXCLUDE_FILE "/app/$FOLDER" trunk/ --delete --delete-excluded
 logLine "$GREEN rsync for trunk/ completed"
 
 

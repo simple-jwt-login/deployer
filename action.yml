@@ -10,6 +10,10 @@ inputs:
     description: 'GitHub repository folder where the plugin is located'
     required: true
     default: '/'  
+  exlude:
+    description: "Exclude specific files/folder to be added in the SVN repository. Separate by comma for multiple files/folders."
+    required: false
+    default: ".gitignore"  
   slug:
     desciption: 'Plugin Slug'
     required: true
@@ -29,12 +33,13 @@ inputs:
     default: null
   dry-run:
     description: 'Run the deployment process without committing. Leave it empty to execute the svn commit.'
-    default: null
+    default: null 
 runs:
   using: 'docker'
   image: 'Dockerfile'
   args:
     - ${{ inputs.plugin_folder }}
+    - ${{ inputs.exclude }}
     - ${{ inputs.slug }}
     - ${{ inputs.username }}
     - ${{ inputs.password }}

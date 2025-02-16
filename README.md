@@ -17,6 +17,7 @@ jobs:
           uses: simple-jwt-login/deployer@main
           with:
             plugin_folder: "simple-jwt-login"
+            exlude: ".git, .gitignore, .github, tests/*"
             slug: "simple-jwt-login"
             username: ${{secrets.SVN_USERNAME}}
             password: ${{secrets.SVN_PASSWORD}}

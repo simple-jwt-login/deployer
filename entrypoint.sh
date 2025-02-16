@@ -118,8 +118,7 @@ ls -d $SVN_DIR/tags
 
 # Check if the tag already exist
 if [[ -d "tags/$VERSION" ]]; then
-    logLine "$ERROR $SLUG plugin version $TAG already exists. Exiting...";
-    exit 1
+    logLine "$ORANGE Warning: $SLUG plugin version $TAG already exists.";
 fi
 
 logLine "$BLUE Copying files from build directory to  trunk..."
@@ -146,7 +145,6 @@ svn status
 if [ -z "$DRY_RUN" ]; then
     logLine "$BLUE Preparing files with svn add ..."
     svn add . --force > /dev/null
-    svn add .
     logLine "$GREEN Files added successfully."
     
     logLine "$BLUE Committing files..."
@@ -163,7 +161,7 @@ else
     svn status
 
     logLine "$PURPLE Running svn add ..."
-    svn add .
+    svn add . --force
 
     logLine "$PURPLE Running svn status ..."
     svn status

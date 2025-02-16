@@ -99,8 +99,15 @@ logLine "$BLUE Checking out .org repository..."
 svn checkout --depth immediates "$SVN_URL" "$SVN_DIR"
 logLine "$GREEN svn choukout completed."
 
+
 # Go to svn plugin
 cd "$SVN_DIR"
+
+# Reset all changes in the SVN directory
+logLine "$BLUE Reseting SVN folder..."
+svn revert -R .
+svn cleanup
+logLine "$GREEN SVN folder is clean."
 
 # Update SVN R
 logLine "$BLUE updating svn repository..."

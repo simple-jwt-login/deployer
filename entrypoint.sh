@@ -15,6 +15,10 @@ DRY_RUN=$8
 
 EXCLUDE_FILE="/exclude.txt"
 
+# Debug
+echo "Current directory $(pwd)"
+ls -la
+
 
 # Validate number of arguments
 if [ $# -lt 7 ]; then
@@ -98,7 +102,6 @@ simple_jwt_header_header
 logLine "$BLUE Checking out .org repository..."
 svn checkout --depth immediates "$SVN_URL" "$SVN_DIR"
 logLine "$GREEN svn choukout completed."
-
 
 # Go to svn plugin
 cd "$SVN_DIR"

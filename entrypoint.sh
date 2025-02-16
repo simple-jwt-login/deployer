@@ -125,14 +125,16 @@ logLine "$BLUE Copying files from build directory to  trunk..."
 rsync -rc --exclude-from=$EXCLUDE_FILE "/app/$FOLDER" trunk/ --delete --delete-excluded
 logLine "$GREEN rsync for trunk/ completed"
 
-
-# If ASSETS_FOLDER is not null, copy all files to /assets
-if [[ -d "$GITHUB_WORKSPACE/$ASSETS_FOLDER/" ]]; then
-    logLine "$BLUE Syncing assets directory..."
-	rsync -rc "$GITHUB_WORKSPACE/$ASSETS_FOLDER/" assets/ --delete
-else
-	logLine "$YELLOW No assets directory found; skipping asset copy"
-fi
+if [ ! -z  "$ASSETS_FOLDER" ];then
+    logLine "$BLUE Assets folder provided"
+    # If ASSETS_FOLDER is not null, copy all files to /assets
+    if [[ -d "$GITHUB_WORKSPACE/$ASSETS_FOLDER/" ]]; then
+        logLine "$BLUE Syncing assets directory..."
+        rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$ASSETS_FOLDER/" assets/ --delete
+    else
+        logLine "$YELLOW No assets directory found; skipping asset copy"
+    fi
+fi;
 
 logLine "$BLUE Copying trunk to tags/$TAG ..."
 svn cp "trunk" "tags/$TAG"

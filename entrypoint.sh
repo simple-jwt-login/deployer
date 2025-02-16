@@ -23,7 +23,7 @@ if [ $# -lt 7 ]; then
 fi;
 
 # Create the exclude file
-touch "$EXCLUDE_FILE"
+echo ".git/" > "$EXCLUDE_FILE"
 
 # Add excluded files 
 if [ -z "$EXCLUDE" ]; then

@@ -1,4 +1,4 @@
-#!/bin/sh -l
+#!/bin/bash -l
 
 # Deployer version
 VERSION=0.1.0
@@ -14,24 +14,26 @@ ASSETS_FOLDER=$7
 DRY_RUN=$8
 
 EXCLUDE_FILE="/exclude.txt"
-touch  $EXCLUDE_FILE
-# Add excluded files 
-if [ -z "$EXCLUDE" ]; then
-    echo ".gitignore" > $EXCLUDE_FILE
-else 
-    array=(`echo $string | sed 's/,/\n/g'`)
-    for i in "${!array[@]}"
-    do
-        echo ${array[i]} >> $EXCLUDE_FILE
-    done
-fi 
-
 
 
 # Validate number of arguments
 if [ $# -lt 7 ]; then
     logLine "$ERROR Missing arguments"
     exit 1
+fi;
+
+# Create the exclude file
+touch "$EXCLUDE_FILE"
+
+# Add excluded files 
+if [ -z "$EXCLUDE" ]; then
+    echo ".gitignore" > "$EXCLUDE_FILE"
+else
+    array=(`echo $EXCLUDE | sed 's/,/\n/g'`)
+    for i in "${!array[@]}"
+    do
+        echo ${array[i]} >> "$EXCLUDE_FILE"
+    done
 fi;
 
 ## UI Constants

@@ -1,0 +1,44 @@
+name: 'WordPress.org deploy'
+description: 'Deploy your WordPress plugin to WordPress.org'
+author: 'nicumicle'
+branding:
+  icon: 'server'
+  color: 'yellow'
+
+inputs:
+  plugin_folder:  
+    description: 'GitHub repository folder where the plugin is located'
+    required: true
+    default: '/'  
+  slug:
+    desciption: 'Plugin Slug'
+    required: true
+    default: '-'
+  username:
+    description: "SVN Username"
+    required: true
+  password:
+    description: "SVN Password"
+    required: tue  
+  tag: 
+    description: "Tag to be used in the tags folder. It has to be unique"
+    required: true    
+  assets_folder:
+    description: "GitHub repository folder where the assets are located"
+    required: false
+    default: null
+  dry-run:
+    description: 'Run the deployment process without committing. Leave it empty to execute the svn commit.'
+    default: null
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.plugin_folder }}
+    - ${{ inputs.slug }}
+    - ${{ inputs.username }}
+    - ${{ inputs.password }}
+    - ${{ inputs.tag }}
+    - ${{ inputs.assets_folder }}
+    - ${{ inputs.dry-run }}
+    

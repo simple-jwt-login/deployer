@@ -1,5 +1,10 @@
 #!/bin/bash -l
 
+# logLine does an echo and attaches the timestap as a prefix. Accepts one argument
+logLine() {
+    echo "["$(date "+%F %T")"] $1"
+}
+
 # Deployer version
 VERSION=0.1.0
 
@@ -26,12 +31,12 @@ if [ $# -lt 7 ]; then
     exit 1
 fi;
 
-# Create the exclude file
-echo ".git/" > "$EXCLUDE_FILE"
+# Create the exclude file and exlude .git and .github
+echo -e ".git/\n.github/\n" > "$EXCLUDE_FILE"
 
 # Add excluded files 
 if [ -z "$EXCLUDE" ]; then
-    echo ".gitignore" > "$EXCLUDE_FILE"
+    echo ".gitignore" >> "$EXCLUDE_FILE"
 else
     array=(`echo $EXCLUDE | sed 's/,/\n/g'`)
     for i in "${!array[@]}"
@@ -49,11 +54,6 @@ BLUE=🟦
 PURPLE=🟪
 SUCCESS=✅
 ERROR=❌
-
-# logLine does an echo and attaches the timestap as a prefix. Accepts one argument
-logLine() {
-    echo "["$(date "+%F %T")"] $1"
-}
 
 # simple_jwt_header_header displayes an ASCII code for Simple-JWT-Login Deployer
 simple_jwt_header_header()
@@ -94,6 +94,7 @@ SVN_URL="https://plugins.svn.wordpress.org/${SLUG}/"
 
 # make sure the directory exists
 mkdir -p $SVN_DIR
+su www
 
 # diplay header to make pipeline cooler
 simple_jwt_header_header

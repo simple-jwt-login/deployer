@@ -18,7 +18,8 @@ COPY entrypoint.sh /entrypoint.sh
 
 # Create a new user
 RUN useradd -u 1000 www
-RUN chown -R www:www /app 
+RUN mkdir /deployer
+RUN chown -R www:www /deployer
 
 USER www
 

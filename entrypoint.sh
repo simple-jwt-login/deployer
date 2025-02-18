@@ -9,7 +9,7 @@ logLine() {
 VERSION=0.1.0
 
 # Init variables from args
-FOLDER=$1
+PLUGIN_FOLDER=$1
 EXCLUDE=$2
 SLUG=$3
 SVN_USERNAME=$4
@@ -18,7 +18,9 @@ TAG=$6
 ASSETS_FOLDER=$7
 DRY_RUN=$8
 
-EXCLUDE_FILE="/exclude.txt"
+DEPLOYER_FOLDER="/deployer"
+APP_FOLDER="$DEPLOYER_FOLDER/app"
+EXCLUDE_FILE="$DEPLOYER_FOLDER/exclude.txt"
 
 # Debug
 echo "Current directory $(pwd)"
@@ -89,12 +91,11 @@ else
     logLine "$YELLOW RUNNING IN DRY RUN MODE"
 fi;
 
-SVN_DIR="/app/SVN/plugins/${SLUG}"
+SVN_DIR="$APP_FOLDER/SVN/plugins/${SLUG}"
 SVN_URL="https://plugins.svn.wordpress.org/${SLUG}/"
 
 # make sure the directory exists
 mkdir -p $SVN_DIR
-su www
 
 # diplay header to make pipeline cooler
 simple_jwt_header_header
@@ -133,7 +134,7 @@ if [[ -d "tags/$VERSION" ]]; then
 fi
 
 logLine "$BLUE Copying files from build directory to  trunk..."
-rsync -rc --exclude-from=$EXCLUDE_FILE "/app/$FOLDER" trunk/ --delete --delete-excluded
+rsync -rc --exclude-from=$EXCLUDE_FILE "$APP_FOLDER/$PLUGIN_FOLDER" trunk/ --delete --delete-excluded
 logLine "$GREEN rsync for trunk/ completed"
 
 if [ ! -z  "$ASSETS_FOLDER" ];then

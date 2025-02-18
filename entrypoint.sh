@@ -91,7 +91,7 @@ else
     logLine "$YELLOW RUNNING IN DRY RUN MODE"
 fi;
 
-SVN_DIR="$APP_FOLDER/SVN/plugins/${SLUG}"
+SVN_DIR="$APP_FOLDER/plugins/${SLUG}"
 SVN_URL="https://plugins.svn.wordpress.org/${SLUG}/"
 
 # make sure the directory exists
@@ -134,15 +134,15 @@ if [[ -d "tags/$VERSION" ]]; then
 fi
 
 logLine "$BLUE Copying files from build directory to  trunk..."
-rsync -rc --exclude-from=$EXCLUDE_FILE "$APP_FOLDER/$PLUGIN_FOLDER" trunk/ --delete --delete-excluded
+rsync -rc --exclude-from=$EXCLUDE_FILE "/app/$PLUGIN_FOLDER" trunk/ --delete --delete-excluded
 logLine "$GREEN rsync for trunk/ completed"
 
 if [ ! -z  "$ASSETS_FOLDER" ];then
     logLine "$BLUE Assets folder provided"
     # If ASSETS_FOLDER is not null, copy all files to /assets
-    if [[ -d "$GITHUB_WORKSPACE/$ASSETS_FOLDER/" ]]; then
+    if [[ -d "/app/$ASSETS_FOLDER/" ]]; then
         logLine "$BLUE Syncing assets directory..."
-        rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$ASSETS_FOLDER/" assets/ --delete
+        rsync -rc --exclude-from=$EXCLUDE_FILE "/app/$ASSETS_FOLDER/" assets/ --delete
     else
         logLine "$YELLOW No assets directory found; skipping asset copy"
     fi

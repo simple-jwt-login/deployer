@@ -19,7 +19,6 @@ ASSETS_FOLDER=$7
 DRY_RUN=$8
 
 DEPLOYER_FOLDER="/deployer"
-APP_FOLDER="$DEPLOYER_FOLDER/app"
 EXCLUDE_FILE="$DEPLOYER_FOLDER/exclude.txt"
 
 # Debug
@@ -91,7 +90,7 @@ else
     logLine "$YELLOW RUNNING IN DRY RUN MODE"
 fi;
 
-SVN_DIR="$APP_FOLDER/plugins/${SLUG}"
+SVN_DIR="$DEPLOYER_FOLDER/plugins/${SLUG}"
 SVN_URL="https://plugins.svn.wordpress.org/${SLUG}/"
 
 # make sure the directory exists
@@ -133,16 +132,16 @@ if [[ -d "tags/$VERSION" ]]; then
     logLine "$ORANGE Warning: $SLUG plugin version $TAG already exists.";
 fi
 
-logLine "$BLUE Copying files from build directory to  trunk..."
-rsync -rc --exclude-from=$EXCLUDE_FILE "/app/$PLUGIN_FOLDER" trunk/ --delete --delete-excluded
+logLine "$BLUE Copying files from $GITHUB_WORKSPACE/$PLUGIN_FOLDER directory to  trunk..."
+rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$PLUGIN_FOLDER" trunk/ --delete --delete-excluded
 logLine "$GREEN rsync for trunk/ completed"
 
 if [ ! -z  "$ASSETS_FOLDER" ];then
     logLine "$BLUE Assets folder provided"
     # If ASSETS_FOLDER is not null, copy all files to /assets
     if [[ -d "/app/$ASSETS_FOLDER/" ]]; then
-        logLine "$BLUE Syncing assets directory..."
-        rsync -rc --exclude-from=$EXCLUDE_FILE "/app/$ASSETS_FOLDER/" assets/ --delete
+        logLine "$BLUE Syncing assets directory $GITHUB_WORKSPACE/$ASSETS_FOLDER to assets ..."
+        rsync -rc --exclude-from=$EXCLUDE_FILE "/$GITHUB_WORKSPACE/$ASSETS_FOLDER/" assets/ --delete
     else
         logLine "$YELLOW No assets directory found; skipping asset copy"
     fi

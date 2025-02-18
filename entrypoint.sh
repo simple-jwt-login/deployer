@@ -133,7 +133,7 @@ if [[ -d "tags/$VERSION" ]]; then
 fi
 
 logLine "$BLUE Copying files from $GITHUB_WORKSPACE/$PLUGIN_FOLDER directory to  trunk..."
-rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$PLUGIN_FOLDER" trunk/ --delete --delete-excluded
+rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$PLUGIN_FOLDER" trunk/ --delete --delete-excluded --ignore-errors
 logLine "$GREEN rsync for trunk/ completed"
 
 if [ ! -z  "$ASSETS_FOLDER" ];then
@@ -141,7 +141,7 @@ if [ ! -z  "$ASSETS_FOLDER" ];then
     # If ASSETS_FOLDER is not null, copy all files to /assets
     if [[ -d "/app/$ASSETS_FOLDER/" ]]; then
         logLine "$BLUE Syncing assets directory $GITHUB_WORKSPACE/$ASSETS_FOLDER to assets ..."
-        rsync -rc --exclude-from=$EXCLUDE_FILE "/$GITHUB_WORKSPACE/$ASSETS_FOLDER/" assets/ --delete
+        rsync -rc --exclude-from=$EXCLUDE_FILE "/$GITHUB_WORKSPACE/$ASSETS_FOLDER/" assets/ --delete --delete-excluded --ignore-errors
     else
         logLine "$YELLOW No assets directory found; skipping asset copy"
     fi
@@ -178,6 +178,15 @@ else
 
     logLine "$PURPLE Running svn status ..."
     svn status
+
+    logLine "$BLUE list trunk"
+    ls -la trunk/
+
+    logLine "$BLUE list tag folder"
+    ls -la tags/
+
+    logLine "$BLUE list tags/$TAG folder"
+    ls -la tags/$TAG
 
     echo ""
     echo ""

@@ -1,36 +1,35 @@
 #!/bin/bash -l
 
-# logLine does an echo and attaches the timestap as a prefix. Accepts one argument
+# logLine does an echo and attaches the timestap as a prefix
 logLine() {
-    echo "["$(date "+%F %T")"] $1"
+    echo "["$(date "+%F %T")"] $@"
 }
 
 # Deployer version
 VERSION=0.1.0
 
 # Init variables from args
-PLUGIN_FOLDER=$1
-EXCLUDE=$2
-SLUG=$3
-SVN_USERNAME=$4
-SVN_PASSWORD=$5
-TAG=$6
-ASSETS_FOLDER=$7
-DRY_RUN=$8
+PLUGIN_FOLDER=$INPUINPUT_PLUGIN_FOLDER
+EXCLUDE=$INPUT_EXCLUDE
+SLUG=$INPUT_SLUG
+SVN_USERNAME=$INPUT_USERNAME
+SVN_PASSWORD=$INPUT_PASSWORD
+TAG=$INPUT_TAG
+ASSETS_FOLDER=$INPUT_ASSETS_FOLDER
+DRY_RUN=$INPUT_DRY_RUN
+COMMIT_MESSAGE="Plugin Update from GitHub actions"
+if [ ! -z "$INPUT_COMMIT_MESSAGE"]; then
+    COMMIT_MESSAGE=$INPUT_COMMIT_MESSAGE
+fi
+
+## Init default values
+if [ -z $PLUGIN_FOLDER ]; then
+    PLUGIN_FOLDER=""
+fi
+
 
 DEPLOYER_FOLDER="/deployer"
 EXCLUDE_FILE="$DEPLOYER_FOLDER/exclude.txt"
-
-# Debug
-echo "Current directory $(pwd)"
-ls -la
-
-
-# Validate number of arguments
-if [ $# -lt 7 ]; then
-    logLine "$ERROR Missing arguments"
-    exit 1
-fi;
 
 # Create the exclude file and exlude .git and .github
 echo -e ".git/\n.github/\n" > "$EXCLUDE_FILE"
@@ -60,8 +59,8 @@ ERROR=❌
 simple_jwt_header_header()
 {
     # Generateed with https://patorjk.com/software/taag
-    COLOR='\033[1;33m' # Yellow
-    NC='\033[0m' # No Color
+    local COLOR='\033[1;33m' # Yellow
+    local NC='\033[0m' # No Color
     echo -e "$COLOR"
     echo " _____ _                 _             ___  _    _ _____      _                 _       "
     echo "/  ___(_)               | |           |_  || |  | |_   _|    | |               (_)      "
@@ -127,15 +126,12 @@ ls -la $SVN_DIR/trunk
 logLine "$PURPLE List $SVN_DIR/tags ..."
 ls -d $SVN_DIR/tags
 
-# Check if the tag already exist
-if [[ -d "tags/$VERSION" ]]; then
-    logLine "$ORANGE Warning: $SLUG plugin version $TAG already exists.";
-fi
 
 logLine "$BLUE Copying files from $GITHUB_WORKSPACE/$PLUGIN_FOLDER directory to  trunk..."
 rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$PLUGIN_FOLDER" trunk/ --delete --delete-excluded --ignore-errors
 logLine "$GREEN rsync for trunk/ completed"
 
+echo "assets folder: $ASSETS_FOLDER"
 if [ ! -z  "$ASSETS_FOLDER" ];then
     logLine "$BLUE Assets folder provided"
     # If ASSETS_FOLDER is not null, copy all files to /assets
@@ -147,9 +143,16 @@ if [ ! -z  "$ASSETS_FOLDER" ];then
     fi
 fi;
 
-logLine "$BLUE Copying trunk to tags/$TAG ..."
-svn cp "trunk" "tags/$TAG"
-logLine "$GREEN tags/$TAG created."
+# Check if the tag already exist
+if [ ! -z $TAG ]; then
+    if [[ -d "tags/$TAG" ]]; then
+        logLine "$ORANGE Warning: $SLUG plugin version $TAG already exists.";
+    fi
+    logLine "$BLUE Copying trunk to tags/$TAG ..."
+    svn cp "trunk" "tags/$TAG"
+    logLine "$GREEN tags/$TAG created."
+fi
+
 
 logLine "$PURPLE SVN status:"
 svn status
@@ -157,11 +160,11 @@ svn status
 
 if [ -z "$DRY_RUN" ]; then
     logLine "$BLUE Preparing files with svn add ..."
-    svn add . --force > /dev/null
+    svn add . --force
     logLine "$GREEN Files added successfully."
     
     logLine "$BLUE Committing files..."
-    svn commit -m "Update to version $TAG from GitHub actions" --no-auth-cache --non-interactive  --username "$SVN_USERNAME" --password "$SVN_PASSWORD"
+    svn commit -m "$COMMIT_MESSAGE" --no-auth-cache --non-interactive  --username "$SVN_USERNAME" --password "$SVN_PASSWORD"
     
     echo ""
     echo ""

@@ -10,7 +10,7 @@ inputs:
     description: 'GitHub repository folder where the plugin is located'
     required: true
     default: '/'  
-  exlude:
+  exclude:
     description: "Exclude specific files/folder to be added in the SVN repository. Separate by comma for multiple files/folders."
     required: false
     default: ".gitignore"  
@@ -25,15 +25,13 @@ inputs:
     description: "SVN Password"
     required: tue  
   tag: 
-    description: "Tag to be used in the tags folder. It has to be unique"
-    required: true    
+    description: "Tag to be used in the tags folder. It has to be unique. When not provided, a tag is not created and only the trunk is folder updated."
   assets_folder:
-    description: "GitHub repository folder where the assets are located"
-    required: false
-    default: null
-  dry-run:
+    description: "GitHub repository folder where the assets are located. If not provided, the assets folder is not updated."
+  dry_run:
     description: 'Run the deployment process without committing. Leave it empty to execute the svn commit.'
-    default: null 
+  commit_message:
+    description: "Set a custom commit message"
 runs:
   using: 'docker'
   image: 'Dockerfile'
@@ -45,5 +43,6 @@ runs:
     - ${{ inputs.password }}
     - ${{ inputs.tag }}
     - ${{ inputs.assets_folder }}
-    - ${{ inputs.dry-run }}
+    - ${{ inputs.dry_run }}
+    - ${{ inputs.commit_message}}
     

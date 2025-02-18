@@ -18,6 +18,9 @@ COPY entrypoint.sh /entrypoint.sh
 
 # Create a new user
 RUN useradd -u 1000 www
+RUN chown -R www:www /app 
+
+USER www
 
 # Code file to execute when the docker container starts up (`entrypoint.sh`)
 ENTRYPOINT ["/entrypoint.sh"]

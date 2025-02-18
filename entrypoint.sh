@@ -89,7 +89,7 @@ else
     logLine "$YELLOW RUNNING IN DRY RUN MODE"
 fi;
 
-SVN_DIR="${HOME}/SVN/plugins/${SLUG}"
+SVN_DIR="/app/SVN/plugins/${SLUG}"
 SVN_URL="https://plugins.svn.wordpress.org/${SLUG}/"
 
 # make sure the directory exists

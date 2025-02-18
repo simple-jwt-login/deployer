@@ -1,4 +1,4 @@
-# Deployer
+# Deployer [Work in progress...]
 
 This action will publish a plugin to WordPress.org.
 

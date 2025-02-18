@@ -167,8 +167,8 @@ if [ -z "$DRY_RUN" ]; then
     echo ""
     logLine "$SUCCESS Plugin deployed to wordpress.org!"
 else 
-    logLine "$PURPLE Running svn diff ..."
-    svn diff
+    logLine "$PURPLE Running svn diff on trunk ..."
+    svn diff trunk/
     
     logLine "$PURPLE Running svn status ..."
     svn status

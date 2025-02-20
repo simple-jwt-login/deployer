@@ -5,11 +5,25 @@ logLine() {
     echo "["$(date "+%F %T")"] $@"
 }
 
+trim() {
+    local input=$1
+
+    # Trim leading and trailing spaces
+    local result=$(echo $input | xargs)
+    
+    if [[ "$input" == /* ]];then
+        # remove leading slash
+        input="${input:1}"
+    fi
+
+    echo $input
+}
+
 # Deployer version
 VERSION=0.1.0
 
 # Init variables from args
-PLUGIN_FOLDER=$INPUINPUT_PLUGIN_FOLDER
+PLUGIN_FOLDER=$INPUT_PLUGIN_FOLDER
 EXCLUDE=$INPUT_EXCLUDE
 SLUG=$INPUT_SLUG
 SVN_USERNAME=$INPUT_USERNAME
@@ -23,7 +37,7 @@ if [ ! -z "$INPUT_COMMIT_MESSAGE"]; then
 fi
 
 ## Init default values
-if [ -z $PLUGIN_FOLDER ]; then
+if [ -z "$PLUGIN_FOLDER" ]; then
     PLUGIN_FOLDER=""
 fi
 
@@ -127,17 +141,17 @@ logLine "$PURPLE List $SVN_DIR/tags ..."
 ls -d $SVN_DIR/tags
 
 
-logLine "$BLUE Copying files from $GITHUB_WORKSPACE/$PLUGIN_FOLDER directory to  trunk..."
-rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$PLUGIN_FOLDER" trunk/ --delete --delete-excluded --ignore-errors
+logLine "$BLUE Copying files from $GITHUB_WORKSPACE/$(trim $PLUGIN_FOLDER) directory to  trunk..."
+rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$(trim $PLUGIN_FOLDER)" trunk/ --delete --delete-excluded --ignore-errors
 logLine "$GREEN rsync for trunk/ completed"
 
 echo "assets folder: $ASSETS_FOLDER"
 if [ ! -z  "$ASSETS_FOLDER" ];then
     logLine "$BLUE Assets folder provided"
     # If ASSETS_FOLDER is not null, copy all files to /assets
-    if [[ -d "/app/$ASSETS_FOLDER/" ]]; then
-        logLine "$BLUE Syncing assets directory $GITHUB_WORKSPACE/$ASSETS_FOLDER to assets ..."
-        rsync -rc --exclude-from=$EXCLUDE_FILE "/$GITHUB_WORKSPACE/$ASSETS_FOLDER/" assets/ --delete --delete-excluded --ignore-errors
+    if [[ -d "/app/$(trim $ASSETS_FOLDER)/" ]]; then
+        logLine "$BLUE Syncing assets directory $GITHUB_WORKSPACE/$(trim $ASSETS_FOLDER) to assets ..."
+        rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$(trim $ASSETS_FOLDER)/" assets/ --delete --delete-excluded --ignore-errors
     else
         logLine "$YELLOW No assets directory found; skipping asset copy"
     fi

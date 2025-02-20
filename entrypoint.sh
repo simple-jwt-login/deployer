@@ -16,6 +16,9 @@ trim() {
         input="${input:1}"
     fi
 
+     # Remove trailing slash
+    input="${input%/}"
+
     echo $input
 }
 
@@ -141,8 +144,8 @@ logLine "$PURPLE List $SVN_DIR/tags ..."
 ls -d $SVN_DIR/tags
 
 
-logLine "$BLUE Copying files from $GITHUB_WORKSPACE/$(trim $PLUGIN_FOLDER) directory to  trunk..."
-rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$(trim $PLUGIN_FOLDER)" trunk/ --delete --delete-excluded --ignore-errors
+logLine "$BLUE Copying files from $GITHUB_WORKSPACE/$(trim $PLUGIN_FOLDER)/ directory to  trunk..."
+rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$(trim $PLUGIN_FOLDER)/" trunk/ --delete --delete-excluded --ignore-errors
 logLine "$GREEN rsync for trunk/ completed"
 
 echo "assets folder: $ASSETS_FOLDER"
@@ -150,7 +153,7 @@ if [ ! -z  "$ASSETS_FOLDER" ];then
     logLine "$BLUE Assets folder provided"
     # If ASSETS_FOLDER is not null, copy all files to /assets
     if [[ -d "/app/$(trim $ASSETS_FOLDER)/" ]]; then
-        logLine "$BLUE Syncing assets directory $GITHUB_WORKSPACE/$(trim $ASSETS_FOLDER) to assets ..."
+        logLine "$BLUE Syncing assets directory $GITHUB_WORKSPACE/$(trim $ASSETS_FOLDER)/ to assets ..."
         rsync -rc --exclude-from=$EXCLUDE_FILE "$GITHUB_WORKSPACE/$(trim $ASSETS_FOLDER)/" assets/ --delete --delete-excluded --ignore-errors
     else
         logLine "$YELLOW No assets directory found; skipping asset copy"

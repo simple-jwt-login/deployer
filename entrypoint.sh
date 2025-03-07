@@ -174,21 +174,30 @@ if [ ! -z $TAG ]; then
     fi
     logLine "$BLUE Copying trunk to tags/$TAG ..."
     svn cp "trunk" "tags/$TAG"
-    logLine "list tags/$TAG folder:"
-    ls -la tags/$TAG
+
+    logLine "$PURPLE list tags/$TAG folder:"
+    tree -a tags/$TAG
+    
     logLine "$GREEN tags/$TAG created."
 fi
 
+logLine "$BLUE list trunk content"
+tree -a trunk/
 
-logLine "$PURPLE SVN status:"
+logLine "$BLUE list tag folder"
+ls -la tags/
+
+logLine "$PURPLE Running svn status:"
 svn status
 
+logLine "$BLUE Preparing files with svn add ..."
+svn add . --force
+logLine "$GREEN Files added successfully."
+
+logLine "$PURPLE Running svn diff ..."
+svn diff
 
 if [ -z "$DRY_RUN" ]; then
-    logLine "$BLUE Preparing files with svn add ..."
-    svn add . --force
-    logLine "$GREEN Files added successfully."
-    
     logLine "$BLUE Committing files..."
     svn commit -m "$COMMIT_MESSAGE" --no-auth-cache --non-interactive  --username "$SVN_USERNAME" --password "$SVN_PASSWORD"
     
@@ -196,27 +205,6 @@ if [ -z "$DRY_RUN" ]; then
     echo ""
     logLine "$SUCCESS Plugin deployed to wordpress.org!"
 else 
-    logLine "$PURPLE Running svn diff on trunk ..."
-    svn diff trunk/
-    
-    logLine "$PURPLE Running svn status ..."
-    svn status
-
-    logLine "$PURPLE Running svn add ..."
-    svn add . --force
-
-    logLine "$PURPLE Running svn status ..."
-    svn status
-
-    logLine "$BLUE list trunk"
-    ls -la trunk/
-
-    logLine "$BLUE list tag folder"
-    ls -la tags/
-
-    logLine "$BLUE list tags/$TAG folder"
-    ls -la tags/$TAG
-
     echo ""
     echo ""
     logLine "$BLUE Dry run: Files not committed."

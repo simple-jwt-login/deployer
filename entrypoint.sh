@@ -1,4 +1,40 @@
 #!/bin/bash -l
+set +H
+
+# Deployer version
+VERSION=0.3.0
+
+## UI Constants
+RED=🟥
+ORANGE=🟧
+YELLOW=🟨
+GREEN=🟩
+BLUE=🟦
+PURPLE=🟪
+SUCCESS=✅
+ERROR=❌
+
+# Init variables from args
+PLUGIN_FOLDER=$INPUT_PLUGIN_FOLDER
+EXCLUDE=$INPUT_EXCLUDE
+SLUG=$INPUT_SLUG
+SVN_USERNAME=$INPUT_USERNAME
+SVN_PASSWORD=$INPUT_PASSWORD
+TAG=$INPUT_TAG
+ASSETS_FOLDER=$INPUT_ASSETS_FOLDER
+DRY_RUN=$INPUT_DRY_RUN
+COMMIT_MESSAGE="Plugin Update from GitHub actions"
+if [ ! -z "$INPUT_COMMIT_MESSAGE" ]; then
+    COMMIT_MESSAGE=$INPUT_COMMIT_MESSAGE
+fi
+
+## Init default values
+if [ -z "$PLUGIN_FOLDER" ]; then
+    PLUGIN_FOLDER=""
+fi
+
+DEPLOYER_FOLDER="/deployer"
+EXCLUDE_FILE="$DEPLOYER_FOLDER/exclude.txt"
 
 # logLine does an echo and attaches the timestap as a prefix
 logLine() {
@@ -7,9 +43,6 @@ logLine() {
 
 trim() {
     local input=$1
-
-    # Trim leading and trailing spaces
-    local result=$(echo $input | xargs)
     
     if [[ "$input" == /* ]];then
         # remove leading slash
@@ -24,58 +57,9 @@ trim() {
 
 escapePath() {
     local input=$1
+    # Replace all // with /
     echo $input | sed 's/\/\//\//g'
 }
-
-# Deployer version
-VERSION=0.1.0
-
-# Init variables from args
-PLUGIN_FOLDER=$INPUT_PLUGIN_FOLDER
-EXCLUDE=$INPUT_EXCLUDE
-SLUG=$INPUT_SLUG
-SVN_USERNAME=$INPUT_USERNAME
-SVN_PASSWORD=$INPUT_PASSWORD
-TAG=$INPUT_TAG
-ASSETS_FOLDER=$INPUT_ASSETS_FOLDER
-DRY_RUN=$INPUT_DRY_RUN
-COMMIT_MESSAGE="Plugin Update from GitHub actions"
-if [ ! -z "$INPUT_COMMIT_MESSAGE"]; then
-    COMMIT_MESSAGE=$INPUT_COMMIT_MESSAGE
-fi
-
-## Init default values
-if [ -z "$PLUGIN_FOLDER" ]; then
-    PLUGIN_FOLDER=""
-fi
-
-
-DEPLOYER_FOLDER="/deployer"
-EXCLUDE_FILE="$DEPLOYER_FOLDER/exclude.txt"
-
-# Create the exclude file and exlude .git and .github
-echo -e ".git/\n.github/\n" > "$EXCLUDE_FILE"
-
-# Add excluded files 
-if [ -z "$EXCLUDE" ]; then
-    echo ".gitignore" >> "$EXCLUDE_FILE"
-else
-    array=(`echo $EXCLUDE | sed 's/,/\n/g'`)
-    for i in "${!array[@]}"
-    do
-        echo ${array[i]} >> "$EXCLUDE_FILE"
-    done
-fi;
-
-## UI Constants
-RED=🟥
-ORANGE=🟧
-YELLOW=🟨
-GREEN=🟩
-BLUE=🟦
-PURPLE=🟪
-SUCCESS=✅
-ERROR=❌
 
 # simple_jwt_header_header displayes an ASCII code for Simple-JWT-Login Deployer
 simple_jwt_header_header()
@@ -87,7 +71,7 @@ simple_jwt_header_header()
     echo " _____ _                 _             ___  _    _ _____      _                 _       "
     echo "/  ___(_)               | |           |_  || |  | |_   _|    | |               (_)      "
     echo "\ \`--. _ _ __ ___  _ __ | | ___ ______  | || |  | | | |______| |     ___   __ _ _ _ __  "
-    echo " \`--. \ | '_ \` _ \| '_ \| |/ _ \______| | || |/\| | | |______| |    / _ \ / _\` | | '_ \ "
+    echo " \`--. \ | '_ \` _ \| '_ \| |/ _ \______| | || |/\| | | |______| |    / _ \ / _\` | | '\ "
     echo "/\__/ / | | | | | | |_) | |  __/    /\__/ /\  /\  / | |      | |___| (_) | (_| | | | | |"
     echo "\____/|_|_| |_| |_| .__/|_|\___|    \____/  \/  \/  \_/      \_____/\___/ \__, |_|_| |_|"
     echo "                  | |                                                      __/ |        "
@@ -104,6 +88,20 @@ simple_jwt_header_header()
     echo " Version: $VERSION"
     echo ""
 }
+
+# Create the exclude file and exlude .git and .github
+echo -e ".git/\n.github/\n" > "$EXCLUDE_FILE"
+
+# Add excluded files 
+if [ -z "$EXCLUDE" ]; then
+    echo ".gitignore" >> "$EXCLUDE_FILE"
+else
+    array=(`echo $EXCLUDE | sed 's/,/\n/g'`)
+    for i in "${!array[@]}"
+    do
+        echo ${array[i]} >> "$EXCLUDE_FILE"
+    done
+fi;
 
 if [ -z "$DRY_RUN" ]; then
     logLine "$GREEN RUNNIING IN LIVE MODE"
@@ -147,7 +145,6 @@ ls -la $SVN_DIR/trunk
 
 logLine "$PURPLE List $SVN_DIR/tags ..."
 ls -d $SVN_DIR/tags
-
 
 folder=$(escapePath "$GITHUB_WORKSPACE/$(trim $PLUGIN_FOLDER)/")
 logLine "$BLUE Copying files from $folder directory to  trunk/..."
@@ -199,7 +196,7 @@ svn diff
 
 if [ -z "$DRY_RUN" ]; then
     logLine "$BLUE Committing files..."
-    svn commit -m "$COMMIT_MESSAGE" --no-auth-cache --non-interactive  --username "$SVN_USERNAME" --password "$SVN_PASSWORD"
+    svn commit -m "$COMMIT_MESSAGE" --no-auth-cache --non-interactive --username "$SVN_USERNAME" --password "$SVN_PASSWORD"
     
     echo ""
     echo ""
@@ -208,6 +205,7 @@ else
     echo ""
     echo ""
     logLine "$BLUE Dry run: Files not committed."
-    logLine "$SUCCESS Done."
     exit 0;
 fi;
+
+logLine "$SUCCESS Done."

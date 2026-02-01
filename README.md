@@ -54,8 +54,8 @@ jobs:
 | `plugin_folder`  | The directory of your WordPress plugin.                    | ✅ Yes    | /                                 |
 | `exclude`        | Files or folders to exclude from deployment.               | ❌ No     | .git,.github, .gitignore          |
 | `slug`           | The plugin's slug on WordPress.org.                        | ✅ Yes    | -                                 |
-| `username`       | Your WordPress.org username (from secrets).                | ✅ Yes    | -                                 |
-| `password`       | Your WordPress.org password (from secrets).                | ✅ Yes    | -                                 |
+| `username`       | Your WordPress.org username (from secrets).                | ❌ No     | -                                 |
+| `password`       | Your WordPress.org password (from secrets).                | ❌ No     | -                                 |
 | `tag`            | The tag name for the release.                              | ❌ No     | -                                 |
 | `assets_folder`  | Directory for WordPress.org assets (e.g., banners, icons). | ❌ No     | -                                 |
 | `dry-run`        | If `true`, runs without committing changes.                | ❌ No     | false                             |  

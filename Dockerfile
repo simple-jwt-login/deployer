@@ -4,9 +4,9 @@ FROM debian:12.9-slim
 
 RUN apt-get -y update && apt-get -y upgrade
 
-RUN  apt-get install -y  --reinstall ca-certificates
+RUN  apt-get install -y --reinstall ca-certificates
 
-# INSTALL SVN
+# INSTALL dependencies
 RUN apt-get install -y \
     subversion \
     rsync \

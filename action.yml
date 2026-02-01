@@ -15,23 +15,27 @@ inputs:
     required: false
     default: ".gitignore"  
   slug:
-    desciption: 'Plugin Slug'
+    description: 'Plugin Slug'
     required: true
     default: '-'
   username:
     description: "SVN Username"
-    required: true
+    required: false
   password:
     description: "SVN Password"
-    required: tue  
+    required: false  
   tag: 
     description: "Tag to be used in the tags folder. It has to be unique. When not provided, a tag is not created and only the trunk is folder updated."
+    required: false
   assets_folder:
     description: "GitHub repository folder where the assets are located. If not provided, the assets folder is not updated."
+    required: false
   dry_run:
     description: 'Run the deployment process without committing. Leave it empty to execute the svn commit.'
+    required: false
   commit_message:
     description: "Set a custom commit message"
+    required: false
 runs:
   using: 'docker'
   image: 'Dockerfile'

@@ -2,7 +2,7 @@
 set +H
 
 # Deployer version
-VERSION=0.3.0
+VERSION=0.4.0
 
 ## UI Constants
 RED=🟥
@@ -105,6 +105,16 @@ fi;
 
 if [ -z "$DRY_RUN" ]; then
     logLine "$GREEN RUNNIING IN LIVE MODE"
+
+    # Validate that the required variables are not empty
+    if [ -z "$SVN_USERNAME" ]; then
+      echo "SVN_USERNAME is empty/not available"
+      exit 1
+    fi
+    if [ -z "$SVN_PASSWORD" ]; then
+      echo "SVN_PASSWORD is empty/not available"
+      exit 1
+    fi
 else 
     logLine "$YELLOW RUNNING IN DRY RUN MODE"
 fi;
@@ -170,7 +180,7 @@ if [ ! -z $TAG ]; then
         logLine "$ORANGE Warning: $SLUG plugin version $TAG already exists.";
     fi
     logLine "$BLUE Copying trunk to tags/$TAG ..."
-    svn cp "trunk" "tags/$TAG"
+    svn cp "trunk/" "tags/$TAG"
 
     logLine "$PURPLE list tags/$TAG folder:"
     tree -a tags/$TAG

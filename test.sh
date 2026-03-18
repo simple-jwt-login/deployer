@@ -5,6 +5,6 @@
 
 source .env
 
-docker build -t deployer .
+docker build -t deployer:v1 .
 
-docker run --env-file .env deployer
+docker run --env-file .env deployer:v1

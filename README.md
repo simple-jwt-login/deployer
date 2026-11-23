@@ -31,20 +31,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         
       - name: Deploy to WordPress.org
         uses: simple-jwt-login/deployer@main
         with:
           plugin_folder: "simple-jwt-login"
-          exclude: ".git, .gitignore, .github, tests/*"
+          exclude: "tests/"
           slug: "simple-jwt-login"
           username: ${{ secrets.SVN_USERNAME }}
           password: ${{ secrets.SVN_PASSWORD }}
           tag: ${{ github.ref_name }}
           assets_folder: "wordpress.org/assets"
           commit_message: "Release plugin"
-          dry-run: true  # When present, it will not execute svn commit
+          dry_run: true  # Set to false, or remove, to execute svn commit
 ```
 
 ## 📂 Inputs
@@ -52,14 +52,14 @@ jobs:
 | Name             | Description                                                | Required  |               Default             |
 | ---------------- | ---------------------------------------------------------- | --------  | --------------------------------- |
 | `plugin_folder`  | The directory of your WordPress plugin.                    | ✅ Yes    | /                                 |
-| `exclude`        | Files or folders to exclude from deployment.               | ❌ No     | .git,.github, .gitignore          |
+| `exclude`        | Comma separated files or folders to exclude.               | ❌ No     | -                                 |
 | `slug`           | The plugin's slug on WordPress.org.                        | ✅ Yes    | -                                 |
 | `username`       | Your WordPress.org username (from secrets).                | ❌ No     | -                                 |
 | `password`       | Your WordPress.org password (from secrets).                | ❌ No     | -                                 |
-| `tag`            | The tag name for the release.                              | ❌ No     | -                                 |
+| `tag`            | New version, e.g. `1.2.3`. A leading `v` is removed.        | ❌ No     | -                                 |
 | `assets_folder`  | Directory for WordPress.org assets (e.g., banners, icons). | ❌ No     | -                                 |
-| `dry-run`        | If `true`, runs without committing changes.                | ❌ No     | false                             |  
-| `commit-message` | A custom commit message                                    | ❌ No     | Plugin Update from GitHub actions | 
+| `dry_run`        | `true` skips the commit. Only `true`, `false` or empty.    | ❌ No     | false                             |  
+| `commit_message` | A custom commit message                                    | ❌ No     | Plugin Update from GitHub actions | 
 
 ## 🔄 How It Works
 
@@ -68,12 +68,16 @@ jobs:
 3. Removes excluded files.
 4. Tags and updates the plugin in the WordPress.org SVN repository.
 5. Updates plugin assets if provided.
-6. Commits changes unless `dry-run` is enabled.
+6. Commits changes unless `dry_run` is enabled.
 
 ## 📝 Notes
 
 - Make sure your plugin follows WordPress.org [plugin guidelines](https://developer.wordpress.org/plugins/wordpress-org/).
-- Always test your deployment using `dry-run: true` before a real release.
+- Always test your deployment using `dry_run: true` before a real release.
+- `.git`, `.github`, `.gitignore` and `.env` are never published.
+- The deployment fails if the tag already exists, or if `plugin_folder` has no `readme.txt` or PHP file with a `Plugin Name:` header.
+- Files removed from your plugin are also removed from `trunk`.
+- This action receives your SVN credentials: pin it to a commit SHA instead of `main`.
 
 ## 🤝 Contributing
 

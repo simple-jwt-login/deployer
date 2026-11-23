@@ -1,12 +1,10 @@
 #!/bin/bash
-set +H
+set -euo pipefail
 
 # Deployer version
-VERSION=0.4.0
+VERSION=0.5.0
 
 ## UI Constants
-RED=🟥
-ORANGE=🟧
 YELLOW=🟨
 GREEN=🟩
 BLUE=🟦
@@ -14,51 +12,78 @@ PURPLE=🟪
 SUCCESS=✅
 ERROR=❌
 
+PLUGIN_FOLDER=${INPUT_PLUGIN_FOLDER:-}
+EXCLUDE=${INPUT_EXCLUDE:-}
+SLUG=${INPUT_SLUG:-}
+SVN_USERNAME=${INPUT_USERNAME:-}
+SVN_PASSWORD=${INPUT_PASSWORD:-}
+TAG=${INPUT_TAG:-}
+TAG=${TAG#v} # WordPress.org versions have no "v" prefix
+ASSETS_FOLDER=${INPUT_ASSETS_FOLDER:-}
+DRY_RUN=${INPUT_DRY_RUN:-}
+COMMIT_MESSAGE=${INPUT_COMMIT_MESSAGE:-Plugin Update from GitHub actions}
+WORKSPACE=${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is not set}
 
-PLUGIN_FOLDER=${INPUT_PLUGIN_FOLDER}
-EXCLUDE=${INPUT_EXCLUDE}
-SLUG=${INPUT_SLUG}
-SVN_USERNAME=${INPUT_USERNAME}
-SVN_PASSWORD=${INPUT_PASSWORD}
-TAG=${INPUT_TAG}
-ASSETS_FOLDER=${INPUT_ASSETS_FOLDER}
-DRY_RUN=${INPUT_DRY_RUN}
-COMMIT_MESSAGE="Plugin Update from GitHub actions"
-if [ ! -z "$INPUT_COMMIT_MESSAGE" ]; then
-    COMMIT_MESSAGE=$INPUT_COMMIT_MESSAGE
-fi    
-
-## Init default values
-if [ -z "$PLUGIN_FOLDER" ]; then
-    PLUGIN_FOLDER=""
-fi
-
-DEPLOYER_FOLDER="/deployer"
+# DEPLOYER_FOLDER and DEPLOYER_SVN_URL are overridden only by the tests
+DEPLOYER_FOLDER=${DEPLOYER_FOLDER:-/deployer}
 EXCLUDE_FILE="$DEPLOYER_FOLDER/exclude.txt"
+SVN_DIR="$DEPLOYER_FOLDER/plugins/$SLUG"
+SVN_URL=${DEPLOYER_SVN_URL:-https://plugins.svn.wordpress.org/$SLUG/}
 
-# logLine does an echo and attaches the timestap as a prefix
+# logLine does an echo and attaches the timestamp as a prefix
 logLine() {
-    echo "["$(date "+%F %T")"] $@"
+    echo "[$(date "+%F %T")] $*"
 }
 
-trim() {
-    local input=$1
-    
-    if [[ "$input" == /* ]];then
-        # remove leading slash
-        input="${input:1}"
+fail() {
+    logLine "$ERROR $*" >&2
+    exit 1
+}
+
+# workspacePath resolves a repository folder to an absolute path with a trailing slash
+workspacePath() {
+    echo "$WORKSPACE/$1/" | tr -s /
+}
+
+# isPlugin checks that a folder contains a WordPress plugin
+isPlugin() {
+    [[ -f "$1/readme.txt" ]] || grep -qs "Plugin Name:" "$1"/*.php
+}
+
+# writeExcludeFile lists the paths that must never be published, plus the user ones
+writeExcludeFile() {
+    local entries entry
+    printf '%s\n' .git .github .gitignore .env > "$EXCLUDE_FILE"
+    IFS=',' read -ra entries <<< "${EXCLUDE//$'\n'/,}"
+    for entry in "${entries[@]}"; do
+        entry="${entry#"${entry%%[![:space:]]*}"}"
+        entry="${entry%"${entry##*[![:space:]]}"}"
+        if [[ -n "$entry" ]]; then
+            printf '%s\n' "$entry" >> "$EXCLUDE_FILE"
+        fi
+    done
+}
+
+# syncFolder mirrors a source folder into a SVN folder
+syncFolder() {
+    rsync -rc --exclude-from="$EXCLUDE_FILE" --delete --delete-excluded "$1" "$2"
+}
+
+# svnStage schedules new files for addition and missing files for deletion
+svnStage() {
+    local status line
+    status=$(svn status)
+    if grep -q '^~' <<< "$status"; then
+        fail "A file was replaced by a folder (or the reverse); remove it from SVN manually first"
     fi
-
-     # Remove trailing slash
-    input="${input%/}"
-
-    echo $input
-}
-
-escapePath() {
-    local input=$1
-    # Replace all // with /
-    echo $input | sed 's/\/\//\//g'
+    # --no-ignore: the svn default ignores would silently drop files like *.so
+    svn add . --force --no-ignore
+    while IFS= read -r line; do
+        if [[ "$line" == '!'* ]]; then
+            # the trailing @ keeps names containing @ from being read as a revision
+            svn rm --force -- "${line:8}@"
+        fi
+    done <<< "$status"
 }
 
 # simple_jwt_header_header displayes an ASCII code for Simple-JWT-Login Deployer
@@ -89,133 +114,81 @@ simple_jwt_header_header()
     echo ""
 }
 
-# Create the exclude file and exlude .git and .github
-echo -e ".git/\n.github/\n" > "$EXCLUDE_FILE"
-
-# Add excluded files 
-if [ -z "$EXCLUDE" ]; then
-    echo ".gitignore" >> "$EXCLUDE_FILE"
-else
-    array=(`echo $EXCLUDE | sed 's/,/\n/g'`)
-    for i in "${!array[@]}"
-    do
-        echo ${array[i]} >> "$EXCLUDE_FILE"
-    done
-fi;
-
-if [ -z "$DRY_RUN" ]; then
-    logLine "$GREEN RUNNIING IN LIVE MODE"
-
-    # Validate that the required variables are not empty
-    if [ -z "$SVN_USERNAME" ]; then
-      echo "SVN_USERNAME is empty/not available"
-      exit 1
-    fi
-    if [ -z "$SVN_PASSWORD" ]; then
-      echo "SVN_PASSWORD is empty/not available"
-      exit 1
-    fi
-else 
-    logLine "$YELLOW RUNNING IN DRY RUN MODE"
-fi;
-
-SVN_DIR="$DEPLOYER_FOLDER/plugins/${SLUG}"
-SVN_URL="https://plugins.svn.wordpress.org/${SLUG}/"
-
-# make sure the directory exists
-mkdir -p $SVN_DIR
-
-# diplay header to make pipeline cooler
 simple_jwt_header_header
 
-# Clone the svn repository
-logLine "$BLUE Checking out .org repository..."
-svn checkout --depth immediates "$SVN_URL" "$SVN_DIR"
-logLine "$GREEN svn choukout completed."
+# Validate inputs
+case "${DRY_RUN,,}" in
+    true) DRY_RUN=true ;;
+    false|"") DRY_RUN=false ;;
+    *) fail "dry_run must be true, false or empty" ;;
+esac
+[[ "$SLUG" =~ ^[a-z0-9-]+$ ]] || fail "slug is missing or invalid: '$SLUG'"
+if [[ -n "$TAG" && ! "$TAG" =~ ^[0-9]+(\.[0-9]+)*(-[0-9A-Za-z.]+)?$ ]]; then
+    fail "tag is invalid: '$TAG' (expected a version like 1.2.3)"
+fi
+SOURCE=$(workspacePath "$PLUGIN_FOLDER")
+isPlugin "$SOURCE" || fail "No plugin found in $SOURCE (readme.txt or a PHP file with a 'Plugin Name:' header)"
 
-# Go to svn plugin
-cd "$SVN_DIR"
-
-# Reset all changes in the SVN directory
-logLine "$BLUE Reseting SVN folder..."
-svn revert -R .
-svn cleanup
-logLine "$GREEN SVN folder is clean."
-
-# Update SVN R
-logLine "$BLUE updating svn repository..."
-svn update --set-depth infinity assets
-svn update --set-depth infinity trunk
-svn update --set-depth immediates tags
-logLine "$GREEN svn update completed."
-
-## Debugging
-logLine "$PURPLE List $SVN_DIR/trunk ..."
-ls -la $SVN_DIR/trunk
-
-logLine "$PURPLE List $SVN_DIR/tags ..."
-ls -d $SVN_DIR/tags
-
-folder=$(escapePath "$GITHUB_WORKSPACE/$(trim $PLUGIN_FOLDER)/")
-logLine "$BLUE Copying files from $folder directory to  trunk/..."
-rsync -rc --exclude-from=$EXCLUDE_FILE $folder trunk/ --delete --delete-excluded --ignore-errors
-logLine "$GREEN rsync for trunk/ completed"
-
-echo "assets folder: $ASSETS_FOLDER"
-if [ ! -z  "$ASSETS_FOLDER" ];then
-    logLine "$BLUE Assets folder provided"
-    # If ASSETS_FOLDER is not null, copy all files to /assets
-    if [[ -d "/app/$(trim $ASSETS_FOLDER)/" ]]; then
-        folder=$(escapePath "$GITHUB_WORKSPACE/$(trim $ASSETS_FOLDER)/")
-        logLine "$BLUE Syncing assets directory $folder to assets/ ..."
-        rsync -rc --exclude-from=$EXCLUDE_FILE $folder assets/ --delete --delete-excluded --ignore-errors
-    else
-        logLine "$YELLOW No assets directory found; skipping asset copy"
-    fi
-fi;
-
-# Check if the tag already exist
-if [ ! -z $TAG ]; then
-    if [[ -d "tags/$TAG" ]]; then
-        logLine "$ORANGE Warning: $SLUG plugin version $TAG already exists.";
-    fi
-    logLine "$BLUE Copying trunk to tags/$TAG ..."
-    svn cp "trunk/" "tags/$TAG"
-
-    logLine "$PURPLE list tags/$TAG folder:"
-    tree -a tags/$TAG
-    
-    logLine "$GREEN tags/$TAG created."
+if [[ "$DRY_RUN" == true ]]; then
+    logLine "$YELLOW RUNNING IN DRY RUN MODE"
+else
+    logLine "$GREEN RUNNING IN LIVE MODE"
+    [[ -n "$SVN_USERNAME" ]] || fail "username is empty/not available"
+    [[ -n "$SVN_PASSWORD" ]] || fail "password is empty/not available"
 fi
 
-logLine "$BLUE list trunk content"
-tree -a trunk/
+mkdir -p "$SVN_DIR"
+writeExcludeFile
 
-logLine "$BLUE list tag folder"
-ls -la tags/
+logLine "$BLUE Checking out .org repository..."
+svn checkout --non-interactive --depth immediates "$SVN_URL" "$SVN_DIR"
+cd "$SVN_DIR"
+svn update --non-interactive --set-depth infinity assets
+svn update --non-interactive --set-depth infinity trunk
+svn update --non-interactive --set-depth immediates tags
+logLine "$GREEN svn checkout completed."
+
+if [[ -n "$TAG" && -e "tags/$TAG" ]]; then
+    fail "$SLUG version $TAG already exists"
+fi
+
+logLine "$BLUE Copying files from $SOURCE to trunk/ ..."
+syncFolder "$SOURCE" trunk/
+logLine "$GREEN rsync for trunk/ completed"
+
+if [[ -n "$ASSETS_FOLDER" ]]; then
+    ASSETS_SOURCE=$(workspacePath "$ASSETS_FOLDER")
+    if [[ -d "$ASSETS_SOURCE" && -n "$(ls -A "$ASSETS_SOURCE")" ]]; then
+        logLine "$BLUE Syncing assets directory $ASSETS_SOURCE to assets/ ..."
+        syncFolder "$ASSETS_SOURCE" assets/
+    else
+        logLine "$YELLOW $ASSETS_SOURCE is missing or empty; skipping asset copy"
+    fi
+fi
+
+logLine "$BLUE Staging changes ..."
+svnStage
+
+if [[ -n "$TAG" ]]; then
+    logLine "$BLUE Copying trunk to tags/$TAG ..."
+    svn cp trunk "tags/$TAG"
+fi
+
+logLine "$PURPLE List trunk content"
+find trunk
 
 logLine "$PURPLE Running svn status:"
 svn status
 
-logLine "$BLUE Preparing files with svn add ..."
-svn add . --force
-logLine "$GREEN Files added successfully."
-
 logLine "$PURPLE Running svn diff ..."
 svn diff
 
-if [ -z "$DRY_RUN" ]; then
-    logLine "$BLUE Committing files..."
-    svn commit -m "$COMMIT_MESSAGE" --no-auth-cache --non-interactive --username "$SVN_USERNAME" --password "$SVN_PASSWORD"
-    
-    echo ""
-    echo ""
-    logLine "$SUCCESS Plugin deployed to wordpress.org!"
-else 
-    echo ""
-    echo ""
+if [[ "$DRY_RUN" == true ]]; then
     logLine "$BLUE Dry run: Files not committed."
-    exit 0;
-fi;
+    exit 0
+fi
 
-logLine "$SUCCESS Done."
+logLine "$BLUE Committing files..."
+printf '%s' "$SVN_PASSWORD" | svn commit -m "$COMMIT_MESSAGE" --no-auth-cache --non-interactive \
+    --username "$SVN_USERNAME" --password-from-stdin
+logLine "$SUCCESS Plugin deployed to wordpress.org!"

@@ -11,13 +11,11 @@ inputs:
     required: true
     default: '/'  
   exclude:
-    description: "Exclude specific files/folder to be added in the SVN repository. Separate by comma for multiple files/folders."
+    description: "Exclude specific files/folder to be added in the SVN repository. Separate by comma for multiple files/folders. .git, .github, .gitignore and .env are always excluded."
     required: false
-    default: ".gitignore"  
   slug:
     description: 'Plugin Slug'
     required: true
-    default: '-'
   username:
     description: "SVN Username"
     required: false
@@ -25,13 +23,13 @@ inputs:
     description: "SVN Password"
     required: false  
   tag: 
-    description: "Tag to be used in the tags folder. It has to be unique. When not provided, a tag is not created and only the trunk is folder updated."
+    description: "Tag to be used in the tags folder. It must not exist yet. A leading v is removed. When not provided, a tag is not created and only the trunk is folder updated."
     required: false
   assets_folder:
     description: "GitHub repository folder where the assets are located. If not provided, the assets folder is not updated."
     required: false
   dry_run:
-    description: 'Run the deployment process without committing. Leave it empty to execute the svn commit.'
+    description: 'Run the deployment process without committing. Use true for a dry run; false or empty executes the svn commit.'
     required: false
   commit_message:
     description: "Set a custom commit message"
@@ -39,14 +37,3 @@ inputs:
 runs:
   using: 'docker'
   image: 'Dockerfile'
-  args:
-    - ${{ inputs.plugin_folder }}
-    - ${{ inputs.exclude }}
-    - ${{ inputs.slug }}
-    - ${{ inputs.username }}
-    - ${{ inputs.password }}
-    - ${{ inputs.tag }}
-    - ${{ inputs.assets_folder }}
-    - ${{ inputs.dry_run }}
-    - ${{ inputs.commit_message}}
-    

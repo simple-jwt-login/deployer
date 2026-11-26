@@ -1,4 +1,4 @@
-name: 'WordPress.org deploy'
+name: 'Simple WordPress.org Plugin Deployer'
 description: 'Deploy your WordPress plugin to WordPress.org'
 author: 'nicumicle'
 branding:

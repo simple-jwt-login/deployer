@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Deployer version
-VERSION=1.0.0
+VERSION=1.0.1
 
 ## UI Constants
 YELLOW=🟨
@@ -141,11 +141,11 @@ mkdir -p "$SVN_DIR"
 writeExcludeFile
 
 logLine "$BLUE Checking out .org repository..."
-svn checkout --non-interactive --depth immediates "$SVN_URL" "$SVN_DIR"
+svn checkout -q --non-interactive --depth immediates "$SVN_URL" "$SVN_DIR"
 cd "$SVN_DIR"
-svn update --non-interactive --set-depth infinity assets
-svn update --non-interactive --set-depth infinity trunk
-svn update --non-interactive --set-depth immediates tags
+svn update -q --non-interactive --set-depth infinity assets
+svn update -q --non-interactive --set-depth infinity trunk
+svn update -q --non-interactive --set-depth immediates tags
 logLine "$GREEN svn checkout completed."
 
 if [[ -n "$TAG" && -e "tags/$TAG" ]]; then
